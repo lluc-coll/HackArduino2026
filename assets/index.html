@@ -1,0 +1,193 @@
+<!--
+SPDX-FileCopyrightText: Copyright (C) ARDUINO SRL (http://www.arduino.cc)
+
+SPDX-License-Identifier: MPL-2.0
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollen Monitor Test UI</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .metric-card {
+            border: 1px solid #d6dddd;
+            border-radius: 8px;
+            padding: 12px;
+            background: #f8fbfb;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #5f6d73;
+            margin-bottom: 6px;
+        }
+
+        .metric-value {
+            font-family: "Roboto Mono", monospace;
+            font-size: 24px;
+            color: #2C353A;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #d9f5ef;
+            color: #0c6b55;
+        }
+
+        .status-pill.alert {
+            background: #fde8e9;
+            color: #a92f3a;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .control-row label {
+            width: 130px;
+            font-size: 14px;
+            color: #2C353A;
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+        }
+
+        .control-row input[type="number"] {
+            width: 80px;
+            padding: 4px 6px;
+            border: 1px solid #bcc8c8;
+            border-radius: 6px;
+        }
+
+        .btn-primary {
+            margin-top: 12px;
+            border: 0;
+            background: #008184;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .event-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            border-top: 1px solid #e2e9e9;
+            padding: 10px 0;
+        }
+
+        .event-title {
+            font-weight: 700;
+            color: #2C353A;
+        }
+
+        .event-subtitle {
+            color: #5f6d73;
+            font-size: 12px;
+        }
+
+        #frameImage {
+            width: 100%;
+            min-height: 420px;
+            border: 0;
+            border-radius: 8px;
+            background: #1f2428;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="header">
+            <h1 class="arduino-text">Pollen Monitor Test</h1>
+            <img class="arduino-logo" src="./img/logo.svg" alt="Arduino Logo">
+        </div>
+
+        <div class="main-content">
+            <div class="container" id="video-container">
+                <div id="videoFeedContainer">
+                    <div id="videoPlaceholder" class="camera-status">
+                        <img src="./img/no-face.svg" alt="Searching webcam">
+                        <p class="feedback-text">Searching Webcam...</p>
+                    </div>
+                    <img id="frameImage" alt="Live pollen frame" style="display: none;"/>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="container container-right">
+                    <h2 class="recent-scans-title" style="margin: 0 0 10px 0;">Live test status</h2>
+                    <span id="statusPill" class="status-pill">RUNNING</span>
+                    <div class="metric-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Current score</div>
+                            <div class="metric-value" id="scoreValue">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Last update</div>
+                            <div class="metric-value" style="font-size: 18px;" id="timeValue">--:--:--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="container container-right">
+                    <h2 class="recent-scans-title" style="margin: 0 0 8px 0;">Controls</h2>
+                    <div class="control-row">
+                        <label for="sensitivitySlider">Sensitivity</label>
+                        <input id="sensitivitySlider" type="range" min="0" max="255" step="1" value="40">
+                        <input id="sensitivityInput" type="number" min="0" max="255" value="40">
+                    </div>
+                    <div class="control-row">
+                        <label for="alarmSlider">Alarm threshold</label>
+                        <input id="alarmSlider" type="range" min="1" max="5000" step="1" value="500">
+                        <input id="alarmInput" type="number" min="1" max="5000" value="500">
+                    </div>
+                    <div class="control-row">
+                        <label for="delaySlider">Test delay (s)</label>
+                        <input id="delaySlider" type="range" min="1" max="30" step="0.5" value="3">
+                        <input id="delayInput" type="number" min="1" max="30" step="0.5" value="3">
+                    </div>
+                    <button id="rebaselineButton" class="btn-primary">Take new baseline</button>
+                </div>
+
+                <div class="container container-right">
+                    <h2 class="recent-scans-title" style="margin: 0 0 8px 0;">Recent test readings</h2>
+                    <ul id="eventList" class="event-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="error-container" class="error-message" style="display: none;"></div>
+    </div>
+
+    <script src="libs/socket.io.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
